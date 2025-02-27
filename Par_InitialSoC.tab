@@ -1,0 +1,14 @@
+FlexibleLoad	InitialSoC
+BESS_Li_Ion_1	0.5
+BESS_Redox_1	0.5
+CAES_1	0.5
+Flywheel_1	0.5
+Hot_Water_Tank_LT_1	0.5
+H2_Storage_1	0.5
+CH4_Storage_1	0.5
+Shiftable_Electricity	0.5
+Shiftable_LT	0.5
+Shiftable_MT	0.5
+Shiftable_H2	0.0
+Shiftable_CH4	0.0
+Shiftable_Biogas	0.0

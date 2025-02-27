@@ -1,0 +1,14 @@
+FlexibleLoad
+BESS_Li_Ion_1
+BESS_Redox_1
+CAES_1
+Flywheel_1
+Hot_Water_Tank_LT_1
+H2_Storage_1
+CH4_Storage_1
+Shiftable_Electricity
+Shiftable_LT
+Shiftable_MT
+Shiftable_H2
+Shiftable_CH4
+Shiftable_Biogas

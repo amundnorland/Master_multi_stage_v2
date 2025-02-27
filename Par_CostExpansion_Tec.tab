@@ -1,0 +1,13 @@
+Technology	CostExpansion
+Power_Grid	1000000.0
+ElectricBoiler	20.8
+HeatPump_LT	119.2
+HeatPump_MT	143.8
+PV	62.6
+P2G	82.1
+G2P	378.1
+GasBoiler	6.0
+CHP	274.0
+Biogas_Grid	1000000.0
+CH4_Grid	1000000.0
+CH4_H2_Mixer	0.0

@@ -1,0 +1,14 @@
+FlexibleLoads	CostExpansion
+BESS_Li_Ion_1	152.05
+BESS_Redox_1	87.7
+CAES_1	47.3
+Flywheel_1	21.1
+Hot_Water_Tank_LT_1	0.2
+H2_Storage_1	10.7
+CH4_Storage_1	0.05
+Shiftable_Electricity	1000000.0
+Shiftable_LT	1000000.0
+Shiftable_MT	1000000.0
+Shiftable_H2	1000000.0
+Shiftable_CH4	1000000.0
+Shiftable_Biogas	1000000.0

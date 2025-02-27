@@ -1,0 +1,14 @@
+FlexibleLoad	Discharge_efficiency
+BESS_Li_Ion_1	0.975
+BESS_Redox_1	0.78
+CAES_1	0.84
+Flywheel_1	0.99
+Hot_Water_Tank_LT_1	1.0
+H2_Storage_1	1.0
+CH4_Storage_1	1.0
+Shiftable_Electricity	1.0
+Shiftable_LT	1.0
+Shiftable_MT	1.0
+Shiftable_H2	1.0
+Shiftable_CH4	1.0
+Shiftable_Biogas	1.0

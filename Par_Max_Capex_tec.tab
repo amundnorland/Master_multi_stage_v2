@@ -1,0 +1,13 @@
+Technology	Capex
+Power_Grid	5
+ElectricBoiler	5
+HeatPump_LT	5
+HeatPump_MT	5
+PV	5
+P2G	5
+G2P	5
+GasBoiler	5
+CHP	5
+Biogas_Grid	5
+CH4_Grid	5
+CH4_H2_Mixer	0

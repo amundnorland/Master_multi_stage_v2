@@ -1,0 +1,14 @@
+FlexibleLoad	EnergyCarrier
+BESS_Li_Ion_1	Electricity
+BESS_Redox_1	Electricity
+CAES_1	Electricity
+Flywheel_1	Electricity
+Hot_Water_Tank_LT_1	LT
+H2_Storage_1	H2
+CH4_Storage_1	CH4
+Shiftable_Electricity	Electricity
+Shiftable_LT	LT
+Shiftable_MT	MT
+Shiftable_H2	H2
+Shiftable_CH4	CH4
+Shiftable_Biogas	Biogas

@@ -1,0 +1,14 @@
+FlexibleLoad	Capex
+BESS_Li_Ion_1	5
+BESS_Redox_1	5
+CAES_1	5
+Flywheel_1	5
+Hot_Water_Tank_LT_1	5
+H2_Storage_1	5
+CH4_Storage_1	5
+Shiftable_Electricity	5
+Shiftable_LT	5
+Shiftable_MT	5
+Shiftable_H2	5
+Shiftable_CH4	5
+Shiftable_Biogas	5

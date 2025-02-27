@@ -1,0 +1,14 @@
+FlexibleLoad	MaxStorageCapacity
+BESS_Li_Ion_1	5
+BESS_Redox_1	5
+CAES_1	10
+Flywheel_1	1
+Hot_Water_Tank_LT_1	5
+H2_Storage_1	10
+CH4_Storage_1	4
+Shiftable_Electricity	1000
+Shiftable_LT	1000
+Shiftable_MT	1000
+Shiftable_H2	0
+Shiftable_CH4	0
+Shiftable_Biogas	0
