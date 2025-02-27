@@ -192,14 +192,14 @@ data.load(filename="Par_Max_Carbon_Emission.tab", param=model.Max_Carbon_Emissio
 VARIABLES
 """
 #Declaring Variables
-model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds=(0,1000))
-model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds=(0,1000))
+model.x_UP = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_DWN = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 #model.x_UP_Tot = pyo.Var(model.Nodes, model.Time, domain=pyo.NonNegativeReals)
 #model.x_DWN_Tot = pyo.Var(model.Nodes, model.Time, domain=pyo.NonNegativeReals)
-model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds=(0,1000))
-model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds=(0,1000))
-model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds=(0,1000))
-model.x_ID_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals, bounds=(0,1000))
+model.x_DA_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_DA_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_ID_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
+model.x_ID_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 #model.x_RT_Up = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 #model.x_RT_Dwn = pyo.Var(model.Nodes, model.Time, domain= pyo.NonNegativeReals)
 model.y_out = pyo.Var(model.Nodes, model.Time, model.TechnologyToEnergyCarrier, domain = pyo.NonNegativeReals)
@@ -213,12 +213,17 @@ model.v_new_tech = pyo.Var(model.Technology, domain = pyo.NonNegativeReals, boun
 model.v_new_bat = pyo.Var(model.FlexibleLoad, domain = pyo.NonNegativeReals, bounds = (0, 0))
 model.y_max = pyo.Var(model.Nodes, model.Month, domain = pyo.NonNegativeReals)
 #model.d_flex = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
-
+model.I_inv = pyo.Var(domain = pyo.NonNegativeReals)
+model.I_cap_bid = pyo.Var(model.Time, domain = pyo.NonNegativeReals)
+model.I_activation = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
+model.I_DA = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
+model.I_ID = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
+model.I_OPEX = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
 
 """
 OBJECTIVE
 """ 
-
+"""
 def objective(model):
     obj_expr = sum(
         model.Cost_Expansion_Tec[i] * model.v_new_tech[i] for i in model.Technology
@@ -256,13 +261,78 @@ def objective(model):
     return obj_expr  # Return the fully evaluated expression
 
 model.Objective = pyo.Objective(rule=objective, sense=pyo.minimize)
+"""
 
+#OBJECTIVE SHORT FORM
+def objective(model):
+    obj_expr = model.I_inv + sum(model.I_cap_bid[t] + sum(model.Node_Probability[n] * (model.I_activation[n, t] + model.I_DA[n, t] + model.I_ID[n, t] + model.I_OPEX[n, t]) for n in model.Nodes_RT) for t in model.Time)
+
+    return obj_expr  # Return the fully evaluated expression
+
+model.Objective = pyo.Objective(rule=objective, sense=pyo.minimize)
 
 
 
 """
 CONSTRAINTS
 """  
+
+###########################################
+############## COST BALANCES ##############
+###########################################
+def cost_investment(model):
+    return model.I_inv == (sum(
+        model.Cost_Expansion_Tec[i] * model.v_new_tech[i] for i in model.Technology
+    ) + sum(
+        model.Cost_Expansion_Bat[b] * model.v_new_bat[b] for b in model.FlexibleLoad
+    ))
+model.InvestmentCost = pyo.Constraint(rule=cost_investment)
+
+def cost_capacity_bid(model, t):
+    return model.I_cap_bid[t] == sum(model.Node_Probability[n] * (
+            - (model.aFRR_Up_Capacity_Price[n, t] * model.x_UP[n, t] +
+               model.aFRR_Dwn_Capacity_Price[n, t] * model.x_DWN[n, t])
+        ) for n in model.Nodes_DA)
+model.CapacityBidCost = pyo.Constraint(model.Time, rule=cost_capacity_bid)
+
+def cost_activation(model, n, p, t):
+    if n in model.Nodes_RT:
+        return model.I_activation[n, t] == (- model.Activation_Factor_UP_Regulation[n, t] * model.aFRR_Up_Activation_Price[n, t] * model.x_UP[p, t]
+                + model.Activation_Factor_DWN_Regulation[n, t] * model.aFRR_Dwn_Activation_Price[n, t] * model.x_DWN[p, t])
+    else:
+        return pyo.Constraint.Skip
+model.ActivationCost = pyo.Constraint(model.Parent_Node, model.Time, rule=cost_activation)
+
+def cost_DA(model, n, p, t):
+    if n in model.Nodes_RT:
+        return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_Up[p, t] - model.x_DA_Dwn[p, t])
+    else:
+        return pyo.Constraint.Skip
+model.DACost = pyo.Constraint(model.Parent_Node, model.Time, rule=cost_activation) 
+
+def cost_ID(model, n, p, t):
+    if n in model.Nodes_RT:
+        return model.I_ID[n, t] == model.Intraday_Price[n, t] * (
+                model.Activation_Factor_ID_Up[n, t] * model.x_ID_Up[p, t] 
+                - model.Activation_Factor_ID_Dwn[n, t] * model.x_ID_Dwn[p, t]
+            )
+    else:
+        return pyo.Constraint.Skip
+model.IDCost = pyo.Constraint(model.Parent_Node, model.Time, rule=cost_ID)    
+
+def cost_opex(model, n, t):
+    return model.I_OPEX[n, t] == (sum(
+                model.y_activity[n, t, i, o] * (model.Cost_Energy[n, t, i] 
+                + model.Carbon_Intensity[i, o] * model.Cost_Emission)
+                for (i, e, o) in model.TechnologyToEnergyCarrier #MÅ OGSÅ LEGGE TIL FOR Y_IN HVIS DET SKAL VÆRE EXPORT
+            ) 
+
+            + sum(model.Cost_Grid * model.y_max[n, m] for m in model.Month)
+
+            + sum(model.Cost_Battery[b] * model.q_discharge[n, t, b] for b in model.FlexibleLoad)
+    )
+model.OPEXCost = pyo.Constraint(model.Nodes_RT, model.Time, rule=cost_opex)
+
 
 ###########################################
 ############## ENERGY BALANCE #############
@@ -391,7 +461,7 @@ def Max_total_up_dwn_load_shift(model, n, i, t, b, e):
     relevant_times = [tt for (j, tt) in model.TimeLoadShift if j == i]        
     if t in relevant_times:
         return model.q_charge[n,t,b] + model.q_discharge[n,t,b]/model.Discharge_Efficiency[b] <= model.Up_Shift_Max * model.Demand[n,t,e]        
-    return pyo.Constraint.Ski
+    return pyo.Constraint.Skip
 model.MaxTotalUpDwnLoadShift = pyo.Constraint(model.Nodes, model.TimeLoadShift, model.ShiftableLoadForEnergyCarrier, rule=Max_total_up_dwn_load_shift)
 
 
@@ -487,7 +557,7 @@ def Carbon_Emission_Limit(model, n):
     total_emission = sum(
         model.y_activity[n, t, i, o] * model.Carbon_Intensity[i, o]
         for t in model.Time
-        for i,e,o in model.TechnologyToEnergyCarrier
+        for (i,e,o) in model.TechnologyToEnergyCarrier
     )
     return total_emission <= model.Max_Carbon_Emission
 model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_RT, rule=Carbon_Emission_Limit)
@@ -521,10 +591,9 @@ def Reserve_Capacity_Dwn_NA(model, n, p, t):
 model.ReserveCapacityDwn = pyo.Constraint(model.Parent_Node, model.Time, rule = Reserve_Capacity_Dwn_NA) 
 
 def Reserve_Capacity_Up_NA(model, n, p, t):
-   
     return (model.x_UP[n, t] == model.x_UP[p, t])
     
-model.DayAheadToIntradayUp = pyo.Constraint(model.Parent_Node, model.Time, rule = Reserve_Capacity_Up_NA) 
+model.ReserveCapacityUp = pyo.Constraint(model.Parent_Node, model.Time, rule = Reserve_Capacity_Up_NA) 
 
 
 
