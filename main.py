@@ -308,7 +308,7 @@ def cost_DA(model, n, p, t):
         return model.I_DA[n, t] == model.Spot_Price[n, t] * (model.x_DA_Up[p, t] - model.x_DA_Dwn[p, t])
     else:
         return pyo.Constraint.Skip
-model.DACost = pyo.Constraint(model.Parent_Node, model.Time, rule=cost_activation) 
+model.DACost = pyo.Constraint(model.Parent_Node, model.Time, rule=cost_DA) 
 
 def cost_ID(model, n, p, t):
     if n in model.Nodes_RT:
