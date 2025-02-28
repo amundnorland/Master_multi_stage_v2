@@ -213,12 +213,12 @@ model.v_new_tech = pyo.Var(model.Technology, domain = pyo.NonNegativeReals, boun
 model.v_new_bat = pyo.Var(model.FlexibleLoad, domain = pyo.NonNegativeReals, bounds = (0, 0))
 model.y_max = pyo.Var(model.Nodes, model.Month, domain = pyo.NonNegativeReals)
 #model.d_flex = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
-model.I_inv = pyo.Var(domain = pyo.NonNegativeReals)
-model.I_cap_bid = pyo.Var(model.Time, domain = pyo.NonNegativeReals)
-model.I_activation = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
-model.I_DA = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
-model.I_ID = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
-model.I_OPEX = pyo.Var(model.Nodes, model.Time, domain = pyo.NonNegativeReals)
+model.I_inv = pyo.Var()
+model.I_cap_bid = pyo.Var(model.Time)
+model.I_activation = pyo.Var(model.Nodes, model.Time)
+model.I_DA = pyo.Var(model.Nodes, model.Time)
+model.I_ID = pyo.Var(model.Nodes, model.Time)
+model.I_OPEX = pyo.Var(model.Nodes, model.Time)
 
 """
 OBJECTIVE
@@ -562,7 +562,7 @@ def Carbon_Emission_Limit(model, n):
     return total_emission <= model.Max_Carbon_Emission
 model.CarbonEmissionLimit = pyo.Constraint(model.Nodes_RT, rule=Carbon_Emission_Limit)
 
-
+"""
 ##############################################################
 ##################### NON-ANTICIPATIVITY #####################
 ##############################################################
@@ -594,7 +594,7 @@ def Reserve_Capacity_Up_NA(model, n, p, t):
     return (model.x_UP[n, t] == model.x_UP[p, t])
     
 model.ReserveCapacityUp = pyo.Constraint(model.Parent_Node, model.Time, rule = Reserve_Capacity_Up_NA) 
-
+"""
 
 
 """
