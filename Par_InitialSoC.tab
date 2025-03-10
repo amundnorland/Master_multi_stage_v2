@@ -9,6 +9,6 @@ CH4_Storage_1	0.5
 Shiftable_Electricity	0.5
 Shiftable_LT	0.5
 Shiftable_MT	0.5
-Shiftable_H2	0.0
-Shiftable_CH4	0.0
-Shiftable_Biogas	0.0
+Shiftable_H2	0.5
+Shiftable_CH4	0.5
+Shiftable_Biogas	0.5
