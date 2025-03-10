@@ -213,14 +213,15 @@ model.v_new_tech = pyo.Var(model.Technology, domain = pyo.NonNegativeReals, boun
 model.v_new_bat = pyo.Var(model.FlexibleLoad, domain = pyo.NonNegativeReals, bounds = (0, 0))
 model.y_max = pyo.Var(model.Nodes, model.Month, domain = pyo.NonNegativeReals)
 model.d_flex = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
+model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier, domain = pyo.NonNegativeReals)
 model.I_inv = pyo.Var()
 model.I_cap_bid = pyo.Var(model.Time)
 model.I_activation = pyo.Var(model.Nodes, model.Time)
 model.I_DA = pyo.Var(model.Nodes, model.Time)
 model.I_ID = pyo.Var(model.Nodes, model.Time)
 model.I_OPEX = pyo.Var(model.Nodes, model.Time)
-model.Up_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier,domain = pyo.NonNegativeReals)
-model.Dwn_Shift = pyo.Var(model.Nodes, model.Time, model.EnergyCarrier,domain = pyo.NonNegativeReals)
+
 
 """
 OBJECTIVE
@@ -647,7 +648,7 @@ print("-" * 70)
 """
 EXTRACT VALUE OF VARIABLES AND WRITE THEM INTO EXCEL FILE
 """
-"""
+
 def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
     
     # Saves Pyomo variable results into an Excel file with filtered output.
@@ -693,39 +694,47 @@ def save_results_to_excel(model_instance, filename="Variable_Results.xlsx"):
 
 # Usage after solving the model
 save_results_to_excel(our_model, filename="Variable_Results.xlsx")
-"""
+
 
 """
 PLOT RESULTS
 """
-"""
+
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.cm import get_cmap
 import numpy as np
 
+def generate_unique_colors(n):
+    """Generate n unique colors for plots."""
+    cmap = plt.get_cmap("tab10")  # Use the tab10 colormap for distinct colors
+    return [cmap(i % 10) for i in range(n)]
 
-def generate_unique_colors(num_colors, colormap='tab20'): #Generate a list of unique colors.
-    cmap = get_cmap(colormap)
-    return [cmap(i / num_colors) for i in range(num_colors)]
-
-
-def plot_results_from_excel(input_file, output_folder):
+def plot_results_from_excel(input_file, output_folder, model):
     os.makedirs(output_folder, exist_ok=True)  # Create folder if it doesn't exist
 
-    # Define mapping for Index_1 to Nodes names
-    Nodes_mapping = {1: "Nodes 1", 2: "Nodes 2", 3: "Nodes 3"}
+    # Construct Nodes mapping dynamically
+    Nodes_mapping = {n: f"Node {n}" for n in model.Nodes}
+
+    ########################################################################################
+    ############## ENDRE FOR Å DEFINERE HVILKE VARIABLER SOM IKKE SKAL PLOTTES #############
+    ########################################################################################
+    exclude_sheets = ["y_max", "y_activity", "Up_shift", "Dwn_Shift", "I_OPEX", "I_DA", "d_flex"]
+    exclude_sheets = [x.strip().lower() for x in exclude_sheets]  # Normalize sheet names
 
     # Read the Excel file
     excel_file = pd.ExcelFile(input_file)
 
     for sheet_name in excel_file.sheet_names:
-        # Read the sheet
+        if sheet_name.strip().lower() in exclude_sheets:
+            print(f"Skipping variable: {sheet_name}") 
+            continue  
+
         df = pd.read_excel(excel_file, sheet_name=sheet_name)
 
         if sheet_name in ["x_aFRR_DWN", "x_aFRR_UP"]:
-            # For x_aFRR_DWN and x_aFRR_UP, plot Index_1 vs. second column
+            # Plot Index_1 vs second column for these sheets
             x_axis = df["Index_1"]
             y_axis = df.iloc[:, 1]  # Second column
 
@@ -738,19 +747,19 @@ def plot_results_from_excel(input_file, output_folder):
             plt.legend(loc='best')
             plt.grid(True)
 
-            # Save the plot
             plot_filename = f"{sheet_name}.png"
             plt.tight_layout()
             plt.savefig(os.path.join(output_folder, plot_filename))
             plt.close()
 
         elif sheet_name in ["x_aFRR_DWN_ind", "x_aFRR_UP_ind"]:
+            # Handle indexed reserve market data
             if "Index_1" in df.columns and "Index_2" in df.columns:
                 plt.figure(figsize=(12, 8))
 
                 x_axis = df["Index_1"]
-                value_column = df.columns[-1]  # Last column contains the values
-                unique_variables = df["Index_2"].unique()
+                value_column = df.columns[-1]
+                unique_variables = df["Index_2"].dropna().unique()  # Drop NaN values
                 colors = generate_unique_colors(len(unique_variables))
 
                 for variable, color in zip(unique_variables, colors):
@@ -766,26 +775,25 @@ def plot_results_from_excel(input_file, output_folder):
                 plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), ncol=3, title="Variables", borderaxespad=0.)
                 plt.grid(True)
 
-                # Save the plot
                 plot_filename = f"{sheet_name}.png"
                 plt.tight_layout()
                 plt.savefig(os.path.join(output_folder, plot_filename))
                 plt.close()
 
         else:
+            # General plotting for other sheets
             if "Index_1" in df.columns and "Index_2" in df.columns:
                 unique_index_1 = df["Index_1"].unique()
 
                 for index_1_value in unique_index_1:
                     filtered_df = df[df["Index_1"] == index_1_value]
-                    x_axis = filtered_df["Index_2"]
 
                     plt.figure(figsize=(12, 8))
 
                     if "Index_3" in filtered_df.columns:
                         variable_column = "Index_3"
                         value_column = df.columns[-1]
-                        unique_variables = filtered_df[variable_column].unique()
+                        unique_variables = filtered_df[variable_column].dropna().unique()
                         colors = generate_unique_colors(len(unique_variables))
 
                         for variable, color in zip(unique_variables, colors):
@@ -811,7 +819,6 @@ def plot_results_from_excel(input_file, output_folder):
                     plt.tight_layout()
                     plt.savefig(os.path.join(output_folder, plot_filename))
                     plt.close()
-                    
 
 
 # Usage
@@ -820,28 +827,22 @@ if __name__ == "__main__":
     output_plots_folder = "plots"  # Folder to save the plots
 
     # Generate plots
-    #plot_results_from_excel(input_excel_file, output_plots_folder)
+    plot_results_from_excel(input_excel_file, output_plots_folder, our_model)
 
 
 def extract_demand_and_flex_demand(model):
     demand_data = []
     flex_demand_data = []
 
-    for s in model.Nodes:
+    for n in model.Nodes_RT:
         for t in model.Time:
             for e in model.EnergyCarrier:
-                if e == "Electricity":  # Restrict to Electricity for this use case
-                    # Retrieve the values safely
-                    demand_value = pyo.value(model.Demand[s, t, e])
-                    flex_demand_value = (
-                        demand_value
-                        + sum(pyo.value(model.q_charge[s, t, b]) for b in model.FlexibleLoad if (b, e) in model.ShiftableLoadForEnergyCarrier)
-                        - sum(pyo.value(model.q_discharge[s, t, b]) for b in model.FlexibleLoad if (b, e) in model.ShiftableLoadForEnergyCarrier)
-                    )
+                if e == "Electricity":
+                    demand_value = pyo.value(model.Demand[n, t, e])
+                    flex_demand_value = pyo.value(model.d_flex[n, t, e])
 
-                    # Append to lists
-                    demand_data.append({'Nodes': s, 'Time': t, 'EnergyCarrier': e, 'Demand': demand_value})
-                    flex_demand_data.append({'Nodes': s, 'Time': t, 'EnergyCarrier': e, 'flex_demand': flex_demand_value})
+                    demand_data.append({'Nodes': n, 'Time': t, 'EnergyCarrier': e, 'Reference_Demand': demand_value})
+                    flex_demand_data.append({'Nodes': n, 'Time': t, 'EnergyCarrier': e, 'flex_demand': flex_demand_value})
 
     # Convert to DataFrame
     demand_df = pd.DataFrame(demand_data)
@@ -854,12 +855,31 @@ demand_df, flex_demand_df = extract_demand_and_flex_demand(our_model)
 # Merge the DataFrames for unified plotting
 merged_df = pd.merge(demand_df, flex_demand_df, on=['Nodes', 'Time', 'EnergyCarrier'])
 
+# Endre denne for å plotte utvalgte noder (eks. første 4 i driftsnodene)
+subset_nodes = merged_df["Nodes"].unique()[:4]
+subset_df = merged_df[merged_df["Nodes"].isin(subset_nodes)]
+
 # Plotting
 plt.figure(figsize=(12, 6))
+
+#####################################################################################
+########################### FOR Å PLOTTE ALLE NODENE ################################
+#####################################################################################
+"""
 for Nodes in merged_df['Nodes'].unique():
     Nodes_data = merged_df[merged_df['Nodes'] == Nodes]
-    plt.step(Nodes_data['Time'], Nodes_data['Demand'],label=f'Demand - Nodes {Nodes}')
+    plt.step(Nodes_data['Time'], Nodes_data['Reference_Demand'],label=f'Demand - Nodes {Nodes}')
     plt.step(Nodes_data['Time'], Nodes_data['flex_demand'], "--", label=f'Flex Demand - Nodes {Nodes}')
+"""
+
+#####################################################################################
+########################### FOR Å PLOTTE UTVALGTE NODER #############################
+#####################################################################################
+for node in subset_nodes:
+    node_data = subset_df[subset_df["Nodes"] == node]
+    plt.step(node_data["Time"], node_data["Reference_Demand"], label=f"Ref Demand - Node {node}", linestyle="-")
+    plt.step(node_data["Time"], node_data["flex_demand"], label=f"Flex Demand - Node {node}", linestyle="--")
+
 
 plt.xlabel('Time')
 plt.ylabel('Demand (MW)')
@@ -867,4 +887,3 @@ plt.title('Demand and Flexible Demand Over Time')
 plt.legend()
 plt.grid(True)
 plt.show()
-"""
