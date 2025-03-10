@@ -699,7 +699,6 @@ save_results_to_excel(our_model, filename="Variable_Results.xlsx")
 """
 PLOT RESULTS
 """
-
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -720,7 +719,7 @@ def plot_results_from_excel(input_file, output_folder, model):
     ########################################################################################
     ############## ENDRE FOR Å DEFINERE HVILKE VARIABLER SOM IKKE SKAL PLOTTES #############
     ########################################################################################
-    exclude_sheets = ["y_max", "y_activity", "Up_shift", "Dwn_Shift", "I_OPEX", "I_DA", "d_flex"]
+    exclude_sheets = ["y_max", "y_activity", "Up_shift", "Dwn_Shift", "d_flex", "I_OPEX", "I_DA", "I_ID", "I_activation", "I_cap_bid", "I_inv"]
     exclude_sheets = [x.strip().lower() for x in exclude_sheets]  # Normalize sheet names
 
     # Read the Excel file
